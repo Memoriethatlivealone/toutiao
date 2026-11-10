@@ -1,0 +1,11 @@
+{
+  // 固定使用项目自带的虚拟环境，避免 Pylance 去全局解释器里找包
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  // 项目根目录加入分析路径，保证 from routers / from config 这类导入能被正确解析
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}"
+  ],
+  // 打开文件时不自动切换到其他解释器
+  "python-envs.defaultEnvManager": "ms-python.python:venv"
+}
