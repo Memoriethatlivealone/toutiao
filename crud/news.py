@@ -47,20 +47,20 @@ async def increase_news_views(db: AsyncSession, news_id: int):
 
 
 async def get_related_news(
-    db: AsyncSession, news_id: int, category_id: int, limit: int = 5
-):  #获取同类推荐新闻news
+    db: AsyncSession, news_id: int, category_id: int, limit: int = 5):
+    #获取同类推荐新闻news
     stmt = (
         select(News)
         .where(News.category_id == category_id, News.id != news_id)
         .order_by(
-            News.views.desc(), News.publish_time.desc()  # 默认是升序，desc 表示降序
-        )
+            News.views.desc(), News.publish_time.desc()  # order_by排序，默认是升序，desc表示降序按浏览量推荐给前端
+        )#浏览量最高 发布时间最新
         .limit(limit)  # 只取前 limit 条，避免相关新闻一次返回太多
     )
     result = await db.execute(stmt)
     # scalars()：从「行」里取出 ORM 对象本身；all()：把所有结果收成列表
     # 上面两行也可以一行写完：result.scalars().all()
-    related_news = result.scalars().all()
+    related_news = result.scalars().all()#执行它
     # 列表推导式 推导出新闻的核心数据，然后再 return
     # 为什么不直接 return related_news？因为那是 ORM 对象，不能直接放进 FastAPI 的响应里，
     # 要转成纯 dict；顺便把字段名改成前端习惯的驼峰命名（publishTime、categoryId）

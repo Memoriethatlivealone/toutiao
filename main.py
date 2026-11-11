@@ -26,7 +26,6 @@ app.add_middleware(
 def read_root():
     return {"Hello": "World"}
 
-
 # 挂载/注册路由
 # 把 news.py 中定义的 router 注册到 app 上，接口路径为 /api/news/...
 app.include_router(news.router)

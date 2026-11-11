@@ -8,7 +8,6 @@
 
 from datetime import datetime
 from typing import Optional
-
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
