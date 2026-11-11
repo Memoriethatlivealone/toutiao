@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#ef4444"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" fill="url(#bg)"/>
+  <circle cx="172" cy="28" r="62" fill="#fff" opacity="0.08"/>
+  <circle cx="16" cy="184" r="72" fill="#fff" opacity="0.06"/>
+  <circle cx="100" cy="84" r="46" fill="none" stroke="#fff" stroke-width="5" opacity="0.95"/>
+  <path d="M54 84 H146 M100 38 V130 M70 48 C90 66 90 102 70 120 M130 48 C110 66 110 102 130 120" fill="none" stroke="#fff" stroke-width="4" opacity="0.85"/>
+  <text x="100" y="172" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="24" font-weight="700" letter-spacing="3" fill="#fff">体育</text>
+</svg>

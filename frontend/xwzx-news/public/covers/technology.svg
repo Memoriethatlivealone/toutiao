@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" fill="url(#bg)"/>
+  <circle cx="172" cy="28" r="62" fill="#fff" opacity="0.08"/>
+  <circle cx="16" cy="184" r="72" fill="#fff" opacity="0.06"/>
+  <rect x="72" y="60" width="56" height="56" rx="8" fill="none" stroke="#fff" stroke-width="5" opacity="0.95"/>
+  <rect x="88" y="76" width="24" height="24" rx="4" fill="#fff" opacity="0.9"/>
+  <path d="M84 60 V44 M100 60 V44 M116 60 V44 M84 116 V132 M100 116 V132 M116 116 V132 M72 72 H56 M72 88 H56 M72 104 H56 M128 72 H144 M128 88 H144 M128 104 H144" fill="none" stroke="#fff" stroke-width="4" opacity="0.8"/>
+  <text x="100" y="172" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="24" font-weight="700" letter-spacing="3" fill="#fff">科技</text>
+</svg>

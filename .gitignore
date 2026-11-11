@@ -12,6 +12,9 @@ __pycache__/
 .env.*
 !.env.example
 
+# 数据库脚本（只在本地初始化使用，不提交）
+database.sql
+
 # 工具缓存
 .pytest_cache/
 .ruff_cache/
