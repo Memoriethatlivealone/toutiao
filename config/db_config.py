@@ -5,7 +5,10 @@
 
 import os
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
+from dotenv import load_dotenv
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -13,20 +16,34 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+# 把项目根目录 .env 里的键值对加载到环境变量中
+# 用绝对路径，避免从其他目录启动时找不到文件
+# 默认 override=False：已存在的系统环境变量优先，不会被 .env 覆盖
+ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(ENV_FILE)
+
 # ---------------------------------------------------------------------------
 # 数据库连接参数
-# 默认值对应本地开发环境，部署时通过环境变量覆盖，避免把密码写死在代码里
+# 统一从环境变量读取（.env 已由上面的 load_dotenv 载入）
+# 第二个参数是默认值，.env 里没配时使用
 # ---------------------------------------------------------------------------
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", "3306"))
 DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "1851622159")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_NAME = os.getenv("DB_NAME", "news_app")
+DB_ECHO = os.getenv("DB_ECHO", "0") == "1"
 
 # 异步数据库 URL，驱动为 aiomysql，字符集必须为 utf8mb4（支持 emoji）
-ASYNC_DATABASE_URL = (
-    f"mysql+aiomysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    "?charset=utf8mb4"
+# 用 URL.create 构造，密码里有 @ : / 等特殊字符时也能正确转义
+ASYNC_DATABASE_URL = URL.create(
+    drivername="mysql+aiomysql",
+    username=DB_USER,
+    password=DB_PASSWORD,
+    host=DB_HOST,
+    port=DB_PORT,
+    database=DB_NAME,
+    query={"charset": "utf8mb4"},
 )
 
 # ---------------------------------------------------------------------------
@@ -38,7 +55,7 @@ ASYNC_DATABASE_URL = (
 # pool_recycle：连接存活超过该秒数后回收重建，避免被 MySQL 的 wait_timeout 主动断开
 async_engine: AsyncEngine = create_async_engine(
     ASYNC_DATABASE_URL,
-    echo=os.getenv("DB_ECHO", "0") == "1",
+    echo=DB_ECHO,
     pool_size=10,
     max_overflow=20,
     pool_recycle=3600,
