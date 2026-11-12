@@ -2,13 +2,15 @@
 
 使用 SQLAlchemy 2.0 声明式风格（Mapped / mapped_column），对应 database.sql 中的：
     - user：用户信息表
+    - user_token：用户令牌表
 
 created_at / updated_at 由 models.news 中的 Base 统一提供，与 user 表结构一致。
 """
 
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Enum, Index, Integer, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 # Base 是公共基类（定义在 models/base.py），所有模型共用同一个 metadata
@@ -77,3 +79,49 @@ class User(Base):
     def __repr__(self):
         """调试时打印用户关键信息，避免输出密码哈希。"""
         return f"<User(id={self.id}, username='{self.username}')>"
+
+
+# 用户令牌表：存储登录 token 及其过期时间，对应 database.sql 中的 user_token
+class UserToken(Base):
+    __tablename__ = "user_token"
+    # 表级约束：与 database.sql 中的索引名保持一致
+    __table_args__ = (
+        # 令牌值唯一，防止同一 token 重复下发
+        Index("token_UNIQUE", "token", unique=True),
+        # 用户外键索引，按用户查令牌是高频查询
+        Index("fk_user_token_user_idx", "user_id"),
+    )
+    # 令牌主键，自增
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+        comment="令牌ID",
+    )
+    # 所属用户ID，外键关联 user.id；用户删除时令牌级联删除
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("user.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        comment="用户ID",
+    )
+    # 令牌值，使用 uuid4 生成，唯一且必填
+    token: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        comment="令牌值",
+    )
+    # 过期时间，过期后令牌失效，需要重新登录
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        comment="过期时间",
+    )
+    # created_at / updated_at 两列由 Base 继承而来，无需重复定义
+
+    def __repr__(self):
+        """调试时打印令牌关键信息。"""
+        return (
+            f"<UserToken(id={self.id}, user_id={self.user_id}, "
+            f"expires_at={self.expires_at})>"
+        )

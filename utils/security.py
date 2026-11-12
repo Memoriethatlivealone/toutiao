@@ -20,7 +20,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ---------------------------------------------------------------------------
 # 二、加密：明文密码 -> 哈希
 # ---------------------------------------------------------------------------
-def hash_password(password: str) -> str:
+def get_hash_password(password: str) -> str:
     """把明文密码加密成哈希字符串，数据库里只存这个哈希，绝不能存明文。"""
     return pwd_context.hash(password)
 
