@@ -33,3 +33,4 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     # verify 会从哈希里解析出盐和算法，用同样的方式重新计算再比对，
     # 而不是把明文重新加密后直接比较字符串（因为每次盐都不同）
     return pwd_context.verify(plain_password, hashed_password)
+#用户登陆
