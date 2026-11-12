@@ -2,7 +2,7 @@
 # FastAPI：Web 框架，负责创建应用、路由和自动生成接口文档
 from fastapi import FastAPI
 # 导入新闻模块的路由文件（routers/news.py）
-from routers import news
+from routers import news, users
 from fastapi.middleware.cors import CORSMiddleware
 # 创建 FastAPI 应用实例，main:app 中的 app 就是它
 app = FastAPI()
@@ -29,3 +29,4 @@ def read_root():
 # 挂载/注册路由
 # 把 news.py 中定义的 router 注册到 app 上，接口路径为 /api/news/...
 app.include_router(news.router)
+app.include_router(users.router)

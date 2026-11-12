@@ -9,29 +9,10 @@
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-
-class Base(DeclarativeBase):
-    """所有模型的基类。
-
-    统一提供 created_at / updated_at 两个时间字段，
-    子类建表时会自动继承这两列，无需重复定义。
-    """
-
-    # 创建时间：插入记录时自动填充，之后不再变化
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.now,
-        comment="创建时间",
-    )
-    # 更新时间：插入时填充，每次更新记录时自动刷新
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.now,
-        onupdate=datetime.now,
-        comment="更新时间",
-    )
+# Base 是公共基类，放在 models/base.py 中，供所有模型文件共用
+from models.base import Base
 
 
 # 新闻分类表：如「科技」「财经」「体育」等
