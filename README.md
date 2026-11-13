@@ -1,6 +1,6 @@
 # AI掘金头条新闻系统 (Toutiao News)
 
-一个基于 FastAPI 和 SQLAlchemy 构建的现代化新闻系统，支持用户注册登录、新闻浏览、收藏和历史记录等功能。。
+一个基于 FastAPI 和 SQLAlchemy 构建的现代化新闻系统，支持用户注册登录、新闻浏览、收藏和历史记录等功能。
 
 ## 1-1 项目概述
 
@@ -236,3 +236,7 @@ REDIS_DB = 0
 - 合理的数据库索引设计
 - 连接池管理减少连接开销
 
+## 贡献者
+
+- [ldd](https://github.com/Memoriethatlivealone)
+- [Codex](https://github.com/codex) — OpenAI 编码助手，参与代码与文档维护
