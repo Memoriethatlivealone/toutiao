@@ -1,11 +1,17 @@
-# 启动命令：uv run uvicorn main:app --reload
-# FastAPI：Web 框架，负责创建应用、路由和自动生成接口文档
+# 启动命令：uv run uvicorn main:app --reload # FastAPI：Web 框架，负责创建应用、路由和自动生成接口文档
 from fastapi import FastAPI
 # 导入新闻模块的路由文件（routers/news.py）
 from routers import news, users
 from fastapi.middleware.cors import CORSMiddleware
+# 全局异常处理器：让 404、422、500 等错误也返回统一的 {code, message, data}
+from utils.exceptions import register_exception_handlers
 # 创建 FastAPI 应用实例，main:app 中的 app 就是它
 app = FastAPI()
+
+# 注册全局异常处理器
+# 注意：必须在挂载路由之前或之后都可以，只要在应用启动前调用即可；
+# 这里紧跟在 app 创建之后，保证所有异常都走统一格式
+register_exception_handlers(app)
 
 # CORS（跨域资源共享）中间件
 # 浏览器的同源策略默认拦截跨域请求，加上它后端才会返回 CORS 响应头，

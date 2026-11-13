@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
+from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.news import Category, News
@@ -49,3 +50,45 @@ async def create_token(db:AsyncSession,user_id:int):
     await db.commit()
 
     return token
+
+async def authenticate_user(db:AsyncSession,username:str,password:str):
+    user=await get_user_by_username(db,username)
+    if not user:
+        return None
+    #明文和密文的对比
+    if not security.verify_password(password,user.password):
+        return None
+
+    return user
+
+# 根据 token 查询用户：token 必须存在且未过期
+async def get_user_by_token(db:AsyncSession,token:str):
+    query=(
+        select(User)
+        # user_token.user_id -> user.id 关联，一个用户同一时间只会有一条 token 记录
+        .join(UserToken,UserToken.user_id==User.id)
+        .where(UserToken.token==token)
+        # 过期时间必须大于当前时间，过期 token 视为未登录
+        .where(UserToken.expires_at>datetime.now())
+    )
+    result=await db.execute(query)
+    return result.scalar_one_or_none()
+
+# 更新个人简介
+async def update_user_bio(db:AsyncSession,user:User,bio:Optional[str]):
+    # 直接改 ORM 对象的属性，SQLAlchemy 会自动标记为脏数据并生成 UPDATE
+    user.bio=bio
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+# 修改密码：先校验原密码，正确才写入新哈希
+# 返回 None 表示原密码不对，由路由层转换成 400
+async def update_user_password(db:AsyncSession,user:User,old_password:str,new_password:str):
+    if not security.verify_password(old_password,user.password):
+        return None
+    # 新密码同样要加密，数据库里永远不存明文
+    user.password=security.get_hash_password(new_password)
+    await db.commit()
+    await db.refresh(user)
+    return user
