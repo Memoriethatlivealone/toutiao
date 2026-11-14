@@ -13,9 +13,9 @@
       </van-cell-group>
       
       <van-cell-group inset :title="$t('settings.account')">
-        <van-cell :title="$t('settings.privacySettings')" is-link />
-        <van-cell :title="$t('settings.notificationSettings')" is-link />
-        <van-cell :title="$t('settings.aboutUs')" is-link />
+        <van-cell :title="$t('settings.privacySettings')" is-link @click="goPrivacy" />
+        <van-cell :title="$t('settings.notificationSettings')" is-link @click="goNotification" />
+        <van-cell :title="$t('settings.aboutUs')" is-link @click="goAbout" />
       </van-cell-group>
     </div>
     
@@ -89,6 +89,11 @@ const { t, locale } = useI18n();
 const onClickLeft = () => {
   router.back();
 };
+
+// 设置子页面跳转
+const goPrivacy = () => router.push('/settings/privacy');
+const goNotification = () => router.push('/settings/notification');
+const goAbout = () => router.push('/settings/about');
 
 // 主题相关
 const showThemePopup = ref(false);

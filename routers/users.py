@@ -1,6 +1,9 @@
 # 用户模块的所有路由
 # APIRouter 用于把一组相关的接口拆到单独文件里，最后在 main.py 中统一注册
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 # UserRequest：请求体模型，包含 username / password，FastAPI 会自动校验并解析 JSON
 from crud import users
@@ -21,6 +24,22 @@ from utils.response import success_response
 # prefix：该模块下所有接口的统一路径前缀，最终路径为 /api/user/xxx
 # tags：OpenAPI 文档（/docs）中的分组名称
 router = APIRouter(prefix="/api/user", tags=["users"])
+
+# ---------------------------------------------------------------------------
+# 头像上传配置
+# ---------------------------------------------------------------------------
+# 头像保存目录：项目根/static/avatars，通过 /static/avatars/xxx.png 访问
+# 用绝对路径，避免从不同目录启动 uvicorn 时写错位置
+AVATAR_DIR = Path(__file__).resolve().parent.parent / "static" / "avatars"
+# 只允许常见的图片格式，content_type -> 扩展名
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+}
+# 头像大小上限：2MB
+MAX_AVATAR_SIZE = 2 * 1024 * 1024
 
 
 # POST /api/user/register：用户注册
@@ -73,14 +92,17 @@ async def get_user_info(current_user=Depends(get_current_user)):
         data=UserInfoResponse.model_validate(current_user),
     )
 
-# PUT /api/user/update：修改个人资料（目前只支持 bio）
+# PUT /api/user/update：修改个人资料（昵称、简介）
 @router.put("/update")
 async def update_user_info(
     user_data: UserUpdateRequest,
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await users.update_user_bio(db, current_user, user_data.bio)
+    # exclude_unset=True：只取请求体里真正传了的字段
+    # 这样前端只传 nickname 时，bio 不会被覆盖成 None
+    fields = user_data.model_dump(exclude_unset=True)
+    user = await users.update_user_profile(db, current_user, **fields)
     # 返回更新后的完整用户信息，前端可以直接用它刷新本地状态
     return success_response(
         message="更新个人资料成功",
@@ -101,3 +123,61 @@ async def update_password(
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="原密码错误")
     return success_response(message="密码修改成功")
+
+
+# POST /api/user/logout：退出登录，删除服务端 token
+@router.post("/logout")
+async def logout(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # 删掉 token 后，旧 token 再请求任何需要登录的接口都会返回 401
+    await users.delete_token(db, current_user.id)
+    return success_response(message="退出登录成功")
+
+
+# POST /api/user/avatar：上传头像
+# 前端用 multipart/form-data 提交，字段名必须是 file
+@router.post("/avatar")
+async def upload_avatar(
+    file: UploadFile = File(..., description="头像图片，支持 jpg/png/gif/webp，最大 2MB"),
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # 1. 校验格式：content_type 由客户端声明，这里只做基础过滤
+    suffix = ALLOWED_IMAGE_TYPES.get(file.content_type)
+    if not suffix:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="只支持 jpg / png / gif / webp 格式的图片",
+        )
+
+    # 2. 读取内容并校验大小（一次性读进内存，2MB 上限可控）
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="上传的文件为空")
+    if len(content) > MAX_AVATAR_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="图片大小不能超过 2MB",
+        )
+
+    # 3. 用 uuid 生成文件名：避免同名覆盖，也避免用户提供的文件名带路径穿越
+    AVATAR_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{suffix}"
+    (AVATAR_DIR / filename).write_bytes(content)
+
+    # 4. 删除旧头像文件，避免 static/avatars 越积越多
+    old_avatar = current_user.avatar or ""
+    if old_avatar.startswith("/static/avatars/"):
+        old_file = AVATAR_DIR / old_avatar.rsplit("/", 1)[-1]
+        if old_file.exists():
+            old_file.unlink()
+
+    # 5. 把新地址写进数据库，前端拼上 baseURL 就能显示
+    avatar_url = f"/static/avatars/{filename}"
+    user = await users.update_user_avatar(db, current_user, avatar_url)
+    return success_response(
+        message="头像上传成功",
+        data={"avatar": user.avatar},
+    )

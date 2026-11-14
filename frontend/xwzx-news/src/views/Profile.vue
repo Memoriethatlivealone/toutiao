@@ -11,18 +11,28 @@
       <van-cell-group inset class="avatar-group">
         <van-cell title="头像" center>
           <template #right-icon>
+            <!-- 点击头像触发下面的隐藏 file input -->
             <van-image
               round
               width="60"
               height="60"
-              src="https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg"
+              :src="avatarUrl"
+              @click="chooseAvatar"
+            />
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style="display: none"
+              @change="onFileChange"
             />
           </template>
         </van-cell>
       </van-cell-group>
-      
+
       <van-cell-group inset class="info-group">
         <van-cell title="用户名" :value="userInfo.username || 'admin'" />
+        <van-cell title="昵称" :value="nickname || '未设置'" is-link @click="showNicknameDialog" />
         <van-cell title="账号ID" :value="`ID: heima-${userId || 'N/A'}`" />
         <van-cell title="个人简介" :value="userBio || '暂无简介'" is-link @click="showBioDialog" />
       </van-cell-group>
@@ -39,7 +49,6 @@ import { ref, computed, h, onMounted } from 'vue';
 import { useUserStore } from '../store/user';
 import { showDialog, showToast, showLoadingToast, showSuccessToast, showFailToast } from 'vant';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 import { apiConfig } from '../config/api';
 
 const router = useRouter();
@@ -89,6 +98,101 @@ onMounted(async () => {
 const userInfo = computed(() => userStore.userInfo);
 const userId = computed(() => userStore.token ? userStore.token.substring(0, 5) : '');
 const userBio = computed(() => userStore.userInfo?.bio || '暂无简介');
+const nickname = computed(() => userStore.userInfo?.nickname || '');
+
+// ---------------------------------------------------------------------------
+// 头像
+// ---------------------------------------------------------------------------
+// 没设置头像时显示的默认图
+const DEFAULT_AVATAR = 'https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg';
+// 隐藏的文件选择框，点头像时用 JS 触发它的 click
+const fileInput = ref(null);
+
+// 后端存的是相对路径（/static/avatars/xxx.png），显示时要拼上后端地址
+const avatarUrl = computed(() => {
+  const avatar = userStore.userInfo?.avatar;
+  if (!avatar) return DEFAULT_AVATAR;
+  return avatar.startsWith('http') ? avatar : `${apiConfig.baseURL}${avatar}`;
+});
+
+const chooseAvatar = () => {
+  fileInput.value?.click();
+};
+
+const onFileChange = async (event) => {
+  const file = event.target.files?.[0];
+  // 清空 input 的值，否则连续选择同一个文件不会触发 change
+  event.target.value = '';
+  if (!file) return;
+
+  // 前端先做一次校验，减少无意义的请求（后端同样会校验）
+  if (!file.type.startsWith('image/')) {
+    showFailToast('请选择图片文件');
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    showFailToast('图片大小不能超过 2MB');
+    return;
+  }
+
+  const loadingInstance = showLoadingToast({
+    message: '上传中...',
+    forbidClick: true,
+    duration: 0
+  });
+  const result = await userStore.uploadAvatar(file);
+  loadingInstance.close();
+
+  if (result.success) {
+    showSuccessToast('头像更新成功');
+  } else {
+    showFailToast(result.message || '头像上传失败');
+  }
+};
+
+// ---------------------------------------------------------------------------
+// 昵称
+// ---------------------------------------------------------------------------
+const showNicknameDialog = () => {
+  const newNickname = ref(nickname.value);
+
+  showDialog({
+    title: '修改昵称',
+    showCancelButton: true,
+    confirmButtonText: '确认',
+    message: h('div', { style: 'text-align: left; padding: 10px 0;' }, [
+      h('div', { style: 'margin-bottom: 5px; text-align: left;' }, '昵称（最多50个字符）：'),
+      h('input', {
+        value: newNickname.value,
+        maxlength: 50,
+        onInput: (e) => { newNickname.value = e.target.value },
+        style: 'width: 100%; border: 1px solid #dcdee0; border-radius: 4px; padding: 8px; box-sizing: border-box;'
+      })
+    ])
+  }).then(async () => {
+    const value = newNickname.value.trim();
+    if (!value) {
+      showToast('昵称不能为空');
+      return;
+    }
+
+    const loadingInstance = showLoadingToast({
+      message: '保存中...',
+      forbidClick: true,
+      duration: 0
+    });
+    const result = await userStore.updateProfile({ nickname: value });
+    loadingInstance.close();
+
+    if (result.success) {
+      showSuccessToast('昵称修改成功');
+    } else {
+      showFailToast(result.message || '昵称修改失败');
+    }
+  }).catch(() => {
+    // 点击取消
+  });
+};
 
 const showPasswordConfirm = () => {
   // 使用ref创建响应式变量
@@ -176,8 +280,8 @@ const showPasswordConfirm = () => {
 };
 
 const showBioDialog = () => {
-  // 使用ref创建响应式变量
-  const newBioValue = ref(userBio.value);
+  // 使用ref创建响应式变量；从真实 bio 取值，不要把「暂无简介」带进编辑框
+  const newBioValue = ref(userStore.userInfo?.bio || '');
   
   showDialog({
     title: '修改个人简介',
@@ -206,8 +310,8 @@ const showBioDialog = () => {
       
       console.log('更新个人简介:', newBioValue.value);
       
-      // 调用API更新个人简介
-      const result = await userStore.updateUserBio(newBioValue.value);
+      // 调用API更新个人简介（只传 bio，昵称不受影响）
+      const result = await userStore.updateProfile({ bio: newBioValue.value });
       
       // 关闭加载提示
       loadingInstance.close();

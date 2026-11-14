@@ -38,7 +38,7 @@
       <van-cell-group inset>
         <van-cell :title="$t('my.myFavorite')" is-link @click="goToFavorite" />
         <van-cell :title="$t('my.browsingHistory')" is-link @click="goToHistory" />
-        <van-cell :title="$t('my.notifications')" is-link />
+        <van-cell :title="$t('my.notifications')" is-link @click="goToNotification" />
         <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
         <van-cell v-if="isLogin" :title="$t('my.logout')" @click="handleLogout" />
       </van-cell-group>
@@ -113,12 +113,18 @@ const handleLogout = () => {
     title: t('common.confirm'),
     message: t('my.logout') + '?',
     showCancelButton: true,
-  }).then((action) => {
+  }).then(async (action) => {
     if (action === 'confirm') {
-      userStore.logout();
+      // 调后端删 token，本地状态在 logoutApi 里统一清理
+      await userStore.logoutApi();
       router.push('/login');
     }
   });
+};
+
+// 跳转通知设置
+const goToNotification = () => {
+  router.push('/settings/notification');
 };
 
 // 获取用户信息

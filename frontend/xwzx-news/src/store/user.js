@@ -99,6 +99,24 @@ export const useUserStore = defineStore('user', {
       this.token = '';
       this.isLogin = false;
     },
+
+    // 退出登录：先通知后端删除 token，再清空本地状态
+    // 后端失败（比如断网）也要清本地，否则用户会卡在「退不出去」的状态
+    async logoutApi() {
+      try {
+        if (this.token) {
+          await axios.post(
+            `${apiConfig.baseURL}/api/user/logout`,
+            {},
+            { headers: { Authorization: this.token } }
+          );
+        }
+      } catch (error) {
+        console.error('退出登录请求失败:', error);
+      } finally {
+        this.logout();
+      }
+    },
     
     // 获取用户信息
     async getUserInfoDetail() {
@@ -144,6 +162,77 @@ export const useUserStore = defineStore('user', {
       }
     },
     
+    // 更新个人资料：只传需要改的字段，未传的字段后端不会动
+    // 例如 updateProfile({ nickname: '小冬' }) 不会影响 bio
+    async updateProfile(profile) {
+      try {
+        if (!this.token) {
+          return { success: false, message: '未登录' };
+        }
+
+        const response = await axios.put(
+          `${apiConfig.baseURL}/api/user/update`,
+          profile,
+          { headers: { Authorization: this.token } }
+        );
+
+        if (response.data && response.data.code === 200) {
+          // 后端返回更新后的完整用户信息，直接覆盖本地状态
+          this.userInfo = response.data.data;
+          return { success: true, data: response.data.data };
+        }
+        return {
+          success: false,
+          message: response.data.message || '更新个人资料失败'
+        };
+      } catch (error) {
+        console.error('更新个人资料请求失败:', error);
+        return {
+          success: false,
+          message: error.response?.data?.message || '更新个人资料失败，请稍后再试'
+        };
+      }
+    },
+
+    // 上传头像：file 是 <input type="file"> 拿到的 File 对象
+    async uploadAvatar(file) {
+      try {
+        if (!this.token) {
+          return { success: false, message: '未登录' };
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 注意不要手动设置 Content-Type，
+        // axios 会自动加上 multipart/form-data 和 boundary
+        const response = await axios.post(
+          `${apiConfig.baseURL}/api/user/avatar`,
+          formData,
+          { headers: { Authorization: this.token } }
+        );
+
+        if (response.data && response.data.code === 200) {
+          const avatar = response.data.data.avatar;
+          // 同步到本地用户信息，页面头像立即更新
+          if (this.userInfo) {
+            this.userInfo.avatar = avatar;
+          }
+          return { success: true, avatar };
+        }
+        return {
+          success: false,
+          message: response.data.message || '头像上传失败'
+        };
+      } catch (error) {
+        console.error('头像上传请求失败:', error);
+        return {
+          success: false,
+          message: error.response?.data?.message || '头像上传失败，请稍后再试'
+        };
+      }
+    },
+
     // 更新个人简介
     async updateUserBio(bio) {
       try {

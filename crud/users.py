@@ -1,10 +1,9 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.news import Category, News
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 
 from models.users import User, UserToken
 from schemas.users import UserRequest
@@ -74,13 +73,42 @@ async def get_user_by_token(db:AsyncSession,token:str):
     result=await db.execute(query)
     return result.scalar_one_or_none()
 
-# 更新个人简介
-async def update_user_bio(db:AsyncSession,user:User,bio:Optional[str]):
+# 更新个人资料：只更新明确传进来的字段
+# 用 UNSET 哨兵区分「没传这个字段」和「传了 null 想清空」，
+# 比如只改昵称时 bio 是 UNSET，不会被误清空
+UNSET = object()
+
+
+async def update_user_profile(
+    db: AsyncSession,
+    user: User,
+    nickname=UNSET,
+    bio=UNSET,
+):
     # 直接改 ORM 对象的属性，SQLAlchemy 会自动标记为脏数据并生成 UPDATE
-    user.bio=bio
+    if nickname is not UNSET:
+        user.nickname = nickname
+    if bio is not UNSET:
+        user.bio = bio
     await db.commit()
     await db.refresh(user)
     return user
+
+
+# 更新头像地址（图片文件本身由路由层负责保存）
+async def update_user_avatar(db: AsyncSession, user: User, avatar_url: str):
+    user.avatar = avatar_url
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+# 退出登录：删除该用户的 token，之后的请求都会返回 401
+async def delete_token(db: AsyncSession, user_id: int) -> int:
+    stmt = delete(UserToken).where(UserToken.user_id == user_id)
+    result = await db.execute(stmt)
+    await db.commit()
+    return result.rowcount
 
 # 修改密码：先校验原密码，正确才写入新哈希
 # 返回 None 表示原密码不对，由路由层转换成 400

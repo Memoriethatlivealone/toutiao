@@ -1,12 +1,22 @@
 # 启动命令：uv run uvicorn main:app --reload # FastAPI：Web 框架，负责创建应用、路由和自动生成接口文档
+from pathlib import Path
+
 from fastapi import FastAPI
 # 导入新闻模块的路由文件（routers/news.py）
 from routers import favorite, history, news, users
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 # 全局异常处理器：让 404、422、500 等错误也返回统一的 {code, message, data}
 from utils.exceptions import register_exception_handlers
 # 创建 FastAPI 应用实例，main:app 中的 app 就是它
 app = FastAPI()
+
+# 静态文件目录：项目根/static，头像等上传文件放在这里
+# 挂载后 /static/avatars/xxx.png 就能直接访问，前端拼上 baseURL 即可显示
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+# 目录不存在时 StaticFiles 会直接启动失败，所以先确保它存在
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # 注册全局异常处理器
 # 注意：必须在挂载路由之前或之后都可以，只要在应用启动前调用即可；

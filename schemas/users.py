@@ -26,8 +26,10 @@ class UserInfoResponse(UserInfoBase):
         from_attributes=True,#允许从orm对象属性中取值
     )
     
-# 修改个人资料：目前只开放 bio，后续要改昵称/头像在这里加字段即可
+# 修改个人资料：只更新请求里出现的字段
+# 例如只传 nickname，bio 就不会被改动；显式传 null 才会清空对应字段
 class UserUpdateRequest(BaseModel):
+    nickname:Optional[str]=Field(None,max_length=50,description="昵称，传 null 表示清空")
     bio:Optional[str]=Field(None,max_length=500,description="个人简介，传 null 表示清空")
 
     model_config=ConfigDict(

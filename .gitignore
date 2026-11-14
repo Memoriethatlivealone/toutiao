@@ -23,6 +23,11 @@ database.sql
 # 前端
 frontend/node_modules/
 frontend/dist/
+# Vue 项目的实际构建产物目录
+frontend/xwzx-news/dist/
+
+# 用户上传的头像等文件，属于运行时数据，不提交
+static/avatars/
 
 # 新闻配图为本地演示资产，不提交（生产环境应使用对象存储/CDN）
 frontend/xwzx-news/public/covers/news/

@@ -104,6 +104,33 @@ const routes = [
       keepAlive: false
     }
   },
+  {
+    path: '/settings/privacy',
+    name: 'Privacy',
+    component: () => import('../views/Privacy.vue'),
+    meta: {
+      title: '隐私设置',
+      keepAlive: false
+    }
+  },
+  {
+    path: '/settings/notification',
+    name: 'Notification',
+    component: () => import('../views/Notification.vue'),
+    meta: {
+      title: '通知设置',
+      keepAlive: false
+    }
+  },
+  {
+    path: '/settings/about',
+    name: 'About',
+    component: () => import('../views/About.vue'),
+    meta: {
+      title: '关于我们',
+      keepAlive: false
+    }
+  },
 ]
 
 const router = createRouter({
