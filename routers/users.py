@@ -1,8 +1,6 @@
 # 用户模块的所有路由
 # APIRouter 用于把一组相关的接口拆到单独文件里，最后在 main.py 中统一注册
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 # UserRequest：请求体模型，包含 username / password，FastAPI 会自动校验并解析 JSON
 from crud import users
@@ -17,6 +15,7 @@ from schemas.users import (
 from config.db_config import get_db
 from starlette import status
 
+from utils.auth import get_current_user
 from utils.response import success_response
 # 创建 APIRouter 实例
 # prefix：该模块下所有接口的统一路径前缀，最终路径为 /api/user/xxx
@@ -64,19 +63,6 @@ async def login_user(user_data: UserRequest, db: AsyncSession = Depends(get_db))
     response_data=UserAuthRespense(token=token,user_info=UserInfoResponse.model_validate(user))
     # 忘记 return 时接口会返回 200 + null，这里必须把成功响应返回出去
     return success_response(message="登陆成功",data=response_data)
-
-# 请求头里取 token，查出对应用户；查不到说明未登录或 token 已过期
-# 前端发送的是 Authorization: <token>（没有 Bearer 前缀），所以不需要额外解析
-async def get_current_user(
-    authorization: Optional[str] = Header(None),
-    db: AsyncSession = Depends(get_db),
-):
-    if not authorization:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未登录或登录已失效")
-    user = await users.get_user_by_token(db, authorization)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未登录或登录已失效")
-    return user
 
 # GET /api/user/info：根据 token 返回当前用户信息
 @router.get("/info")

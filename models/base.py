@@ -30,3 +30,14 @@ class Base(DeclarativeBase):
         onupdate=datetime.now,
         comment="更新时间",
     )
+
+
+class PlainBase(DeclarativeBase):
+    """不自动带 created_at / updated_at 的基类，与 Base 共享同一个 metadata。
+
+    favorite 表只有 created_at、history 表只有 view_time，与 Base 的两列结构不一致。
+    如果直接继承 Base，SQLAlchemy 查询时会 SELECT 不存在的 updated_at 列从而报错，
+    所以这两类表使用 PlainBase，时间字段在各自模型里单独定义。
+    """
+
+    metadata = Base.metadata

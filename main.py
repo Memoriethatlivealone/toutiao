@@ -1,7 +1,7 @@
 # 启动命令：uv run uvicorn main:app --reload # FastAPI：Web 框架，负责创建应用、路由和自动生成接口文档
 from fastapi import FastAPI
 # 导入新闻模块的路由文件（routers/news.py）
-from routers import news, users
+from routers import favorite, history, news, users
 from fastapi.middleware.cors import CORSMiddleware
 # 全局异常处理器：让 404、422、500 等错误也返回统一的 {code, message, data}
 from utils.exceptions import register_exception_handlers
@@ -36,3 +36,6 @@ def read_root():
 # 把 news.py 中定义的 router 注册到 app 上，接口路径为 /api/news/...
 app.include_router(news.router)
 app.include_router(users.router)
+# 收藏 / 浏览历史模块，接口路径为 /api/favorite/...、/api/history/...
+app.include_router(favorite.router)
+app.include_router(history.router)
