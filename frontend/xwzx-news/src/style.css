@@ -1,18 +1,37 @@
 /* 移动端适配基础样式 */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Helvetica Neue", "Microsoft YaHei", system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  /* 主题变量 */
-  --primary-color: #1989fa;
-  --text-color: #333;
-  --text-color-light: #666;
-  --text-color-lighter: #999;
-  --border-color: #ebedf0;
-  --background-color: #f7f8fa;
+  /* ---------------- 主题变量（今日头条风格） ---------------- */
+  /* 品牌红：选中态、按钮、收藏星标等强调元素 */
+  --primary-color: #f04142;
+  --text-color: #1a1a1a;
+  --text-color-light: #71717a;
+  --text-color-lighter: #a1a1aa;
+  --border-color: #ededed;
+  --background-color: #f5f6f7;
+  --card-color: #ffffff;
   --white: #fff;
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
+
+  /* ---------------- Vant 组件变量覆盖 ---------------- */
+  /* 改这里就能让所有 Vant 组件的强调色跟着变红，不用逐个组件改样式 */
+  --van-primary-color: #f04142;
+  --van-tabs-bottom-bar-color: #f04142;
+  --van-tab-active-text-color: #1a1a1a;
+  --van-tab-text-color: #71717a;
+  --van-tabbar-item-active-color: #f04142;
+  --van-tabbar-item-text-color: #a1a1aa;
+  --van-nav-bar-title-text-color: #1a1a1a;
+  --van-nav-bar-icon-color: #1a1a1a;
+  --van-nav-bar-text-color: #1a1a1a;
+  --van-cell-text-color: #1a1a1a;
+  --van-cell-value-color: #71717a;
+  --van-border-color: #ededed;
+  --van-background: #f5f6f7;
 
   color-scheme: light dark;
   color: var(--text-color);

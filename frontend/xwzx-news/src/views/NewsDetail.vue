@@ -2,27 +2,28 @@
   <div class="news-detail">
     <van-nav-bar
       title="新闻详情"
-      left-text="返回"
       left-arrow
       @click-left="onClickLeft"
       fixed
+      :border="false"
     />
-    
+
     <div class="detail-content" v-if="newsStore.newsDetail.id">
       <div class="title-container">
         <h1 class="title">{{ newsStore.newsDetail.title }}</h1>
-        <van-button 
-          class="favorite-btn" 
-          :icon="isFavorite ? 'star' : 'star-o'" 
+        <van-button
+          class="favorite-btn"
+          :icon="isFavorite ? 'star' : 'star-o'"
           :class="{ 'is-favorite': isFavorite }"
+          :border="false"
           @click="toggleFavorite"
         />
       </div>
-      
+
       <div class="info">
         <span>{{ newsStore.newsDetail.author }}</span>
-        <span>{{ newsStore.newsDetail.publishTime }}</span>
-        <span>{{ newsStore.newsDetail.views }} 阅读</span>
+        <span>{{ formatTime(newsStore.newsDetail.publishTime) }}</span>
+        <span>{{ formatViews(newsStore.newsDetail.views) }}阅读</span>
       </div>
       
       <div class="cover" v-if="newsStore.newsDetail.image">
@@ -85,6 +86,18 @@ const contentParagraphs = computed(() => {
 // 返回上一页
 const onClickLeft = () => {
   router.back()
+}
+
+// 后端时间可能是 ISO 格式（2024-01-01T08:00:00），展示时去掉 T 并截到分钟
+const formatTime = (value) => {
+  if (!value) return ''
+  return String(value).replace('T', ' ').slice(0, 16)
+}
+
+// 阅读量超过一万时显示「1.2万」
+const formatViews = (value) => {
+  const count = Number(value) || 0
+  return count >= 10000 ? `${(count / 10000).toFixed(1)}万` : String(count)
 }
 
 // 跳转到相关新闻
@@ -173,12 +186,16 @@ onMounted(async () => {
 <style scoped>
 .news-detail {
   padding-top: 46px;
-  background-color: #fff;
+  background-color: var(--background-color, #f5f6f7);
   min-height: 100vh;
 }
 
+/* 桌面端：正文限制在 900px 宽的白色文章区，居中显示 */
 .detail-content {
-  padding: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 40px 48px;
+  background-color: var(--card-color, #fff);
 }
 
 .title-container {
@@ -190,80 +207,110 @@ onMounted(async () => {
 
 .title {
   font-size: 22px;
-  font-weight: bold;
+  font-weight: 700;
   line-height: 1.4;
+  color: var(--text-color, #1a1a1a);
   margin: 0;
   flex: 1;
+  word-break: break-word;
 }
 
+/* 收藏按钮：无边框的图标按钮，收藏后变成品牌红 */
 .favorite-btn {
   flex-shrink: 0;
   margin-left: 10px;
   padding: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  color: #c8c9cc;
+  background-color: transparent;
 }
 
 .favorite-btn.is-favorite {
-  color: #ff9500;
+  color: var(--primary-color, #f04142);
 }
 
 .info {
   display: flex;
+  align-items: center;
   font-size: 12px;
-  color: #999;
-  margin-bottom: 16px;
+  color: var(--text-color-lighter, #a1a1aa);
+  margin-bottom: 18px;
 }
 
-.info span {
-  margin-right: 12px;
+/* 元信息之间用中点分隔 */
+.info span + span::before {
+  content: '·';
+  margin: 0 8px;
+  color: #d4d4d8;
 }
 
 .cover {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .cover img {
+  display: block;
   width: 100%;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .content {
-  font-size: 16px;
-  line-height: 1.8;
-  color: #333;
+  font-size: 17px;
+  line-height: 1.75;
+  color: #262626;
 }
 
 .content p {
-  margin-bottom: 16px;
+  margin: 0 0 18px;
   text-align: justify;
 }
 
+/* 相关推荐：灰色底板块，和正文拉开层次 */
 .related-news {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 8px solid #f5f5f5;
+  margin: 24px -40px 0;
+  padding: 24px 40px;
+  background-color: var(--background-color, #f5f6f7);
 }
 
 .related-news h3 {
-  font-size: 18px;
-  margin: 0 0 16px;
+  position: relative;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-color, #1a1a1a);
+  margin: 0 0 14px;
+  padding-left: 10px;
+}
+
+.related-news h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background-color: var(--primary-color, #f04142);
 }
 
 .related-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .related-item {
   display: flex;
   align-items: center;
+  padding: 10px;
+  background-color: var(--card-color, #fff);
+  border-radius: 8px;
 }
 
 .related-image {
-  width: 80px;
+  width: 84px;
   height: 60px;
   margin-right: 12px;
   flex-shrink: 0;
@@ -277,8 +324,25 @@ onMounted(async () => {
 }
 
 .related-title {
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-color, #1a1a1a);
   flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 手机端恢复紧凑排版 */
+@media (max-width: 768px) {
+  .detail-content {
+    padding: 20px 16px 32px;
+  }
+
+  .related-news {
+    margin: 24px -16px 0;
+    padding: 16px;
+  }
 }
 </style>

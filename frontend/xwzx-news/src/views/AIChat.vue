@@ -1,6 +1,6 @@
 <template>
   <div class="ai-chat-container">
-    <van-nav-bar title="AI问答" fixed />
+    <van-nav-bar title="AI问答" fixed left-arrow @click-left="router.push('/home')" />
     
     <div class="chat-content">
       <div class="messages-container" ref="messagesContainer">
@@ -47,11 +47,14 @@
 
 <script setup>
 import { ref, onMounted, nextTick, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import TabBar from '../components/TabBar.vue';
 import { showToast } from 'vant';
 import * as marked from 'marked';
 import DOMPurify from 'dompurify';
 import { aiChatConfig } from '../config/api';
+
+const router = useRouter();
 
 // 聊天消息
 const messages = ref([

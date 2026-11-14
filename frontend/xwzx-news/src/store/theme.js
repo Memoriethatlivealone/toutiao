@@ -5,11 +5,12 @@ export const useThemeStore = defineStore('theme', {
     currentTheme: localStorage.getItem('theme') || 'light', // 默认浅色主题
     themes: {
       light: {
-        name: '浅色模式',
-        backgroundColor: '#ffffff',
-        textColor: '#333333',
-        primaryColor: '#1989fa',
-        secondaryColor: '#f5f5f5',
+        name: '经典红',
+        // 今日头条风格：浅灰背景 + 白色卡片 + 品牌红强调色
+        backgroundColor: '#f5f6f7',
+        textColor: '#1a1a1a',
+        primaryColor: '#f04142',
+        secondaryColor: '#ffffff',
       },
       dark: {
         name: '深色模式',
@@ -60,6 +61,10 @@ export const useThemeStore = defineStore('theme', {
       document.documentElement.style.setProperty('--text-color', theme.textColor);
       document.documentElement.style.setProperty('--primary-color', theme.primaryColor);
       document.documentElement.style.setProperty('--secondary-color', theme.secondaryColor);
+      // 同步 Vant 的强调色变量，切换主题时按钮、TabBar、Tabs 下划线一起变色
+      document.documentElement.style.setProperty('--van-primary-color', theme.primaryColor);
+      document.documentElement.style.setProperty('--van-tabs-bottom-bar-color', theme.primaryColor);
+      document.documentElement.style.setProperty('--van-tabbar-item-active-color', theme.primaryColor);
     },
     
     initTheme() {

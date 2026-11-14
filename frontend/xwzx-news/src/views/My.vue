@@ -1,69 +1,85 @@
 <template>
   <div class="my-container">
-    <van-nav-bar :title="$t('my.title')" />
-    <div class="user-info" @click="goToProfile" v-if="isLogin">
-      <div class="avatar">
-        <van-image
-          round
-          width="80"
-          height="80"
-          src="https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg"
-        />
+    <!-- 顶部红色渐变头部：头像 + 昵称 + 简介 -->
+    <div class="profile-header" @click="goToProfile">
+      <div class="avatar-box">
+        <van-image round width="64" height="64" :src="avatarUrl" />
       </div>
-      <div class="info">
-        <div class="username">{{ isLogin ? userInfo.username : $t('my.notLoggedIn') }}</div>
-        <div class="desc" v-if="isLogin">{{ userBio || $t('profile.bio') }}</div>
-      </div>
-      <van-icon name="arrow" class="arrow-icon" />
-    </div>
-    <div class="user-info" v-else>
-      <div class="avatar">
-        <van-image
-          round
-          width="80"
-          height="80"
-          src="https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg"
-        />
-      </div>
-      <div class="info">
-        <div class="username">{{ $t('my.notLoggedIn') }}</div>
-        <div class="desc">
-          <van-button type="primary" size="small" @click="goToLogin" style="margin-right: 10px">{{ $t('my.goToLogin') }}</van-button>
-          <van-button type="default" size="small" @click="goToRegister">{{ $t('my.goToRegister') }}</van-button>
+      <div class="user-meta">
+        <div class="nickname">{{ isLogin ? displayName : $t('my.notLoggedIn') }}</div>
+        <div class="bio" v-if="isLogin">{{ userBio }}</div>
+        <div class="login-actions" v-else>
+          <span class="login-btn" @click.stop="goToLogin">{{ $t('my.goToLogin') }}</span>
+          <span class="register-btn" @click.stop="goToRegister">{{ $t('my.goToRegister') }}</span>
         </div>
+      </div>
+      <van-icon v-if="isLogin" name="arrow" class="header-arrow" />
+      <!-- 桌面端没有底部 TabBar，这里提供回首页入口（手机端隐藏） -->
+      <van-icon name="home-o" class="header-home" @click.stop="router.push('/home')" />
+    </div>
+
+    <!-- 功能宫格 -->
+    <div class="quick-grid">
+      <div class="grid-item" @click="goToFavorite">
+        <van-icon name="star-o" class="grid-icon" />
+        <span>{{ $t('my.myFavorite') }}</span>
+      </div>
+      <div class="grid-item" @click="goToHistory">
+        <van-icon name="clock-o" class="grid-icon" />
+        <span>{{ $t('my.browsingHistory') }}</span>
+      </div>
+      <div class="grid-item" @click="goToNotification">
+        <van-icon name="bell" class="grid-icon" />
+        <span>{{ $t('my.notifications') }}</span>
+      </div>
+      <div class="grid-item" @click="goToSettings">
+        <van-icon name="setting-o" class="grid-icon" />
+        <span>{{ $t('my.settings') }}</span>
       </div>
     </div>
 
-    <div class="menu-list">
-      <van-cell-group inset>
-        <van-cell :title="$t('my.myFavorite')" is-link @click="goToFavorite" />
-        <van-cell :title="$t('my.browsingHistory')" is-link @click="goToHistory" />
-        <van-cell :title="$t('my.notifications')" is-link @click="goToNotification" />
-        <van-cell :title="$t('my.settings')" is-link @click="goToSettings" />
-        <van-cell v-if="isLogin" :title="$t('my.logout')" @click="handleLogout" />
-      </van-cell-group>
-    </div>
+    <!-- 退出登录独立卡片 -->
+    <van-cell-group v-if="isLogin" inset class="logout-group">
+      <van-cell :title="$t('my.logout')" class="logout-cell" @click="handleLogout" />
+    </van-cell-group>
+
     <tab-bar />
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useUserStore } from '../store/user';
 import { useRouter } from 'vue-router';
-import { computed, ref } from 'vue';
 import { showDialog, showToast } from 'vant';
 import TabBar from '../components/TabBar.vue';
 import { useI18n } from 'vue-i18n';
+import { apiConfig } from '../config/api';
 
 const userStore = useUserStore();
 const router = useRouter();
 const { t } = useI18n();
 
+// 没设置头像时显示的默认图
+const DEFAULT_AVATAR = 'https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg';
+
 // 从store获取用户信息和登录状态
 const userInfo = computed(() => userStore.userInfo);
 const isLogin = computed(() => userStore.getLoginStatus);
 const userBio = computed(() => userStore.getUserBio || t('profile.bio'));
+
+// 优先显示昵称，没设置昵称时退回用户名
+const displayName = computed(() => {
+  const info = userInfo.value;
+  return info?.nickname || info?.username || '';
+});
+
+// 后端存的是相对路径（/static/avatars/xxx.png），显示时要拼上后端地址
+const avatarUrl = computed(() => {
+  const avatar = userInfo.value?.avatar;
+  if (!avatar) return DEFAULT_AVATAR;
+  return avatar.startsWith('http') ? avatar : `${apiConfig.baseURL}${avatar}`;
+});
 
 // 跳转到登录页
 const goToLogin = () => {
@@ -139,7 +155,6 @@ onMounted(async () => {
 
 <style scoped>
 .my-container {
-  padding-top: 46px;
   padding-bottom: 50px;
   background-color: var(--background-color);
   color: var(--text-color);
@@ -147,51 +162,161 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-.van-nav-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 999;
-}
-
-.user-info {
+/* ---------------- 顶部渐变头部 ---------------- */
+.profile-header {
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 20px 16px;
-  background-color: var(--primary-color);
+  padding: 36px 20px 32px;
+  background: linear-gradient(135deg, #f04142 0%, #ff6b6b 100%);
   color: #fff;
-  border-radius: 8px;
-  margin: 16px;
-  position: relative;
+  cursor: pointer;
 }
 
-.arrow-icon {
-  position: absolute;
-  right: 16px;
-  color: #969799;
+.avatar-box {
+  flex-shrink: 0;
+  margin-right: 14px;
 }
 
-.avatar {
-  margin-right: 16px;
+.avatar-box :deep(.van-image) {
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
-.info {
+.user-meta {
   flex: 1;
+  min-width: 0;
 }
 
-.username {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 4px;
+.nickname {
+  font-size: 20px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.desc {
-  font-size: 14px;
-  color: #999;
+.bio {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.menu-list {
-  margin: 0 16px;
+.header-arrow {
+  flex-shrink: 0;
+  margin-left: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 回首页入口只在桌面端显示，手机端用底部 TabBar */
+.header-home {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: none;
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.header-home:hover {
+  color: #fff;
+}
+
+.login-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.login-btn,
+.register-btn {
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.login-btn {
+  background-color: #fff;
+  color: var(--primary-color, #f04142);
+}
+
+.register-btn {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* ---------------- 功能宫格 ---------------- */
+/* 上移压在渐变头部下沿，形成浮在头部的卡片效果 */
+.quick-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: -16px 12px 0;
+  padding: 18px 0;
+  background-color: var(--card-color, #fff);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-color-light, #71717a);
+  cursor: pointer;
+}
+
+.grid-item:active {
+  opacity: 0.7;
+}
+
+.grid-icon {
+  font-size: 24px;
+  color: var(--primary-color, #f04142);
+}
+
+/* ---------------- 退出登录 ---------------- */
+.logout-group {
+  margin-top: 12px;
+}
+
+:deep(.logout-cell) {
+  justify-content: center;
+}
+
+:deep(.logout-cell .van-cell__title) {
+  flex: none;
+  text-align: center;
+  font-size: 15px;
+  color: var(--primary-color, #f04142);
+}
+
+/* 桌面端：内容居中在 1080px 内，底部没有 tabbar 也不用留白 */
+@media (min-width: 900px) {
+  .my-container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+  }
+
+  .profile-header {
+    margin-top: 24px;
+    border-radius: 12px;
+    padding: 40px 32px;
+  }
+
+  .header-home {
+    display: block;
+  }
 }
 </style>

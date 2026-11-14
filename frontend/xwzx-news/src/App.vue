@@ -36,10 +36,10 @@ html, body {
   width: 100%;
 }
 
+/* 桌面端全宽；各页面自己用 max-width 控制内容宽度 */
 .app {
-  max-width: 750px;
-  margin: 0 auto;
-  height: 100%;
+  width: 100%;
+  min-height: 100%;
 }
 
 /* 移动端适配 */
