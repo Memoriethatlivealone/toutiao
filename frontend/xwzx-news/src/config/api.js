@@ -1,6 +1,6 @@
 /**
  * API配置文件
- * 包含API基础URL和AI问答功能所需的API参数
+ * 包含 API 基础 URL 和 AI 问答接口地址
  */
 
 // API基础URL配置
@@ -9,13 +9,7 @@ export const apiConfig = {
   baseURL: 'http://127.0.0.1:8000',
 }
 
+// AI 问答统一走本地后端，密钥保存在后端 .env，前端不再持有 API Key
 export const aiChatConfig = {
-  // OpenAI API地址
-  apiEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-  
-  // API Key (由开发人员指定)
-  apiKey: 'sk-9c4d89982a6a4bd3b7494d94751fe81c',
-  
-  // 使用的模型
-  model: 'qwen3-max-preview'
+  apiEndpoint: `${apiConfig.baseURL}/api/ai/chat`,
 }

@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from config.cache import close_redis
 # 导入新闻模块的路由文件（routers/news.py）
-from routers import favorite, history, news, users
+from routers import ai_chat, favorite, history, news, users
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 # 全局异常处理器：让 404、422、500 等错误也返回统一的 {code, message, data}
@@ -61,3 +61,5 @@ app.include_router(users.router)
 # 收藏 / 浏览历史模块，接口路径为 /api/favorite/...、/api/history/...
 app.include_router(favorite.router)
 app.include_router(history.router)
+# AI 问答，接口路径 /api/ai/chat
+app.include_router(ai_chat.router)

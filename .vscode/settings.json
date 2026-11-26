@@ -7,5 +7,6 @@
     "${workspaceFolder}"
   ],
   // 打开文件时不自动切换到其他解释器
-  "python-envs.defaultEnvManager": "ms-python.python:venv"
+  "python-envs.defaultEnvManager": "ms-python.python:venv",
+  "python.terminal.useEnvFile": true
 }

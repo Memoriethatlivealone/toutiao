@@ -12,6 +12,8 @@ dependencies = [
     "bcrypt==4.0.1",
     "cryptography>=50.0.2",
     "fastapi[standard]>=0.162.2",
+    "langchain>=1.5.2",
+    "langchain-openai>=1.8.5",
     "passlib==1.7.4",
     "python-dotenv>=1.2.4",
     "redis>=8.1.0",
