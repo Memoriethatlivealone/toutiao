@@ -1,15 +1,27 @@
 # 启动命令：uv run uvicorn main:app --reload # FastAPI：Web 框架，负责创建应用、路由和自动生成接口文档
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+
+from config.cache import close_redis
 # 导入新闻模块的路由文件（routers/news.py）
 from routers import favorite, history, news, users
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 # 全局异常处理器：让 404、422、500 等错误也返回统一的 {code, message, data}
 from utils.exceptions import register_exception_handlers
+
+
+# 应用关闭时统一释放 Redis 连接池，避免进程退出前留下未关闭的连接
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await close_redis()
+
+
 # 创建 FastAPI 应用实例，main:app 中的 app 就是它
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 # 静态文件目录：项目根/static，头像等上传文件放在这里
 # 挂载后 /static/avatars/xxx.png 就能直接访问，前端拼上 baseURL 即可显示
